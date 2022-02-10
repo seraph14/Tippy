@@ -1,5 +1,6 @@
 package com.example.tippy
 
+import android.animation.ArgbEvaluator
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.text.Editable
@@ -8,6 +9,7 @@ import android.util.Log
 import android.widget.EditText
 import android.widget.SeekBar
 import android.widget.TextView
+import androidx.core.content.ContextCompat
 import androidx.core.widget.addTextChangedListener
 
 private const val TAG = "MainActivity"
@@ -19,6 +21,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var tvTipPercent: TextView
     private lateinit var tvTipAmount: TextView
     private lateinit var tvTotalAmount: TextView
+    private lateinit var tvTipDescription: TextView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -29,13 +32,18 @@ class MainActivity : AppCompatActivity() {
         tvTipPercent = findViewById(R.id.tvTipPercentLabel)
         tvTipAmount = findViewById(R.id.tvTipAmount)
         tvTotalAmount = findViewById(R.id.tvTotalAmount)
+        tvTipDescription = findViewById(R.id.tvTipDescription)
 
         seekBarTip.progress = INITIAL_TIP_VALUE
+        tvTipPercent.text = "$INITIAL_TIP_VALUE%"
+        updateTipDescription(INITIAL_TIP_VALUE)
+
         seekBarTip.setOnSeekBarChangeListener(object: SeekBar.OnSeekBarChangeListener{
             override fun onProgressChanged(p0: SeekBar?, p1: Int, p2: Boolean) {
                 Log.i(TAG, "onProgressChanged $p1")
                 tvTipPercent.text = "$p1%"
                 computeTipAndTotal()
+                updateTipDescription(p1)
             }
 
             override fun onStartTrackingTouch(p0: SeekBar?) {
@@ -60,6 +68,27 @@ class MainActivity : AppCompatActivity() {
                 computeTipAndTotal()
             }
         })
+    }
+
+    private fun updateTipDescription(progress: Int) {
+        val tipDescription = when (progress) {
+            in 0..9 -> "Poor"
+            in 10..14 -> "Acceptable"
+            in 14..19 -> "Good"
+            in 20..24 -> "Great"
+            else -> "Amazing"
+        }
+        tvTipDescription.text = tipDescription
+
+        // update the color
+        val color = ArgbEvaluator().evaluate(
+            progress.toFloat() / seekBarTip.max,
+            ContextCompat.getColor(this, R.color.color_worst_tip),
+            ContextCompat.getColor(this, R.color.color_best_tip),
+        ) as Int
+
+        tvTipDescription.setTextColor(color)
+
     }
 
     private fun computeTipAndTotal() {
